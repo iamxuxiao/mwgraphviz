@@ -4,19 +4,8 @@ A AWS Lambda function that draw graphics, return the results as SVG and store th
 ## Overall design of the stacks
 In this note, my goal is to have a web service perform dot graph rendering on the cloud. The overall design is not entirely serverless because I still have a front end and a thin server dealing with UI and post, but the the real service which is run graphviz within Lambda is indeed ¡°serverless¡±. Here is the workflow: User types in the textbox some dot text and hit a button to do post, to API-gateway, which is merely a pass-through, then dot text is passed to AWS lambda, the lambda package also contains the executables of graphviz, at there, lambda makes a system call, get the results, in terms of SVG text and return back as a response, for browser to display.
 
-```
-          post                        pass
-+---------------+ dot text  +---------------+ dot text  +---------------+
-| Front end &   +-----------+ API gateway   +-----------+ Lambda calls  |        +-------------+
-| thin server   |-----------+ pass through  |-----------+ dot_static    +--------| dot_static -Tsvg /tmp/sample.dot -/tmp/sample.svb
-+---------------+  return   +---------------+           +------+--------+        +--------+----+                        |
-           svg                                              |                             |
-                                                            READ       lambda's temp      |
-                                                            |          directory          |
-                                                            |         +-------------+     |
-                                                            +---------+/tmp/sample.svg----+
-                                                                      +-------------+
-```
+![screenCapOfFrontEnd](https://github.com/iamxuxiao/mwgraphviz/blob/master/workflow.png)
+
 
 ## Compile a statically linked Graphviz
 Graphviz program itself has a lot dependencies to other lower level libraries(because the wide range of image format it supports). Additionally when we install graphviz in a fresh OS (like AWS EC2), we do observe that the package manager will also pull in lots of other libraries to be installed, these libraries will be loaded dynamically during the runtime.
@@ -130,4 +119,4 @@ The front end is as simple as the following: a text area for user to type in the
 +---------------------------+
 ```
 
-![screenCapOfFrontEnd](https://github.com/iamxuxiao/mwgraphviz/blob/master/mwgraphviz2.png)
+![screenCapOfFrontEnd](https://github.com/iamxuxiao/mwgraphviz/blob/master/mwgraphviz1.png)
