@@ -1,5 +1,5 @@
 # mwgraphviz
-Draw graphics in browser using AWS Lambda 
+Draw graphics in browser using AWS Lambda, return the results as SVG and store the images on AWS S3
 
 ## Overall design of the stacks
 In this note, my goal is to have a web service perform dot graph rendering on the cloud. The overall design is not entirely serverless because I still have a front end and a thin server dealing with UI and post, but the the real service which is run graphviz within Lambda is indeed ¡°serverless¡±. Here is the workflow: User types in the textbox some dot text and hit a button to do post, to API-gateway, which is merely a pass-through, then dot text is passed to AWS lambda, the lambda package also contains the executables of graphviz, at there, lambda makes a system call, get the results, in terms of SVG text and return back as a response, for browser to display.
@@ -10,12 +10,12 @@ In this note, my goal is to have a web service perform dot graph rendering on th
 | Front end &   +-----------+ API gateway   +-----------+ Lambda calls  |        +-------------+
 | thin server   |-----------+ pass through  |-----------+ dot_static    +--------| dot_static -Tsvg /tmp/sample.dot -/tmp/sample.svb
 +---------------+  return   +---------------+           +------+--------+        +--------+----+                        |
-           svg                                |                             |
-                                              READ       lambda's temp      |
-                                              |          directory          |
-                                              |         +-------------+     |
-                                              +---------+/tmp/sample.svg----+
-                                                        +-------------+
+           svg                                              |                             |
+                                                            READ       lambda's temp      |
+                                                            |          directory          |
+                                                            |         +-------------+     |
+                                                            +---------+/tmp/sample.svg----+
+                                                                      +-------------+
 ```
 
 ## Compile a statically linked Graphviz
@@ -49,34 +49,64 @@ The zip file we will upload to AWS lambda contains the dot_static as well as the
 var fs    = require('fs') ;
 var spawn = require('child_process').spawn
 var AWS   = require('aws-sdk')
-var uuid = require("uuid");      // used for random name generation.
+var uuid = require("uuid");      // random svg name generation.
+
+
+AWS.config.loadFromPath('./s3config.json');
+
+
+var postprocess = function( svg ){
+    svg = svg.replace(/[\n]/g,' ');
+    svg = svg.replace(/\\/g,' ') 
+    return svg;
+}
 
 exports.handler = (event, context, callback) => {
+
     var name = uuid.v4();
     var dotname = "/tmp/"+name+".dot";
     var svgname = "/tmp/"+name+".svg";
+    var s3name = name+".svg";
 
-    // dot text comes in as event.data
-    fs.writeFileSync(dotname,event.data);    
-
-    // call external exectuable
+    // dot text will be coming as event.data
+    // write it to tmp directory
+    fs.writeFileSync(dotname,event.data);
+    
+    // run dot on tmp dot file and generate tmp svg file
     var gendot = spawn('./dot_static',['-Tsvg', dotname,'-o',svgname])
-
     gendot.stdout.on('data',function(data){
-    console.log('stdout:'+data);
+        //console.log('stdout:'+data);
     });
-
+    
     gendot.stderr.on('data',function(data){
-    console.log('stderr:'+data);   
+        console.log('stderr:'+data);
+        //pass the parsing error back
     });
-
+    
     gendot.on('close',function(code){
-    console.log('child process exited with code: '+ code);
-    // if the child_process is finished correctly 
-    // read its generated svg and pass the contents back 
-    var svgtext = fs.readFileSync(svgname,"utf8").toString(); 
-    context.succeed(svgtext);
+        console.log('child process exited with code: '+ code);
+        var svgtext = fs.readFileSync(svgname,"utf8").toString(); 
+        svgtext = postprocess(svgtext);
+
+        //context.succeed(svgtext);
+
+        //upload the file
+        var s3 = new AWS.S3({
+	    "region": "us-east-1"
+        });
+	console.log(svgname);
+        s3.putObject({
+            Bucket: '', // fill the S3 bucket name
+            Key:  s3name,
+            Body: svgtext,
+            ACL: "public-read"        },
+                     function(perr,pres){
+			 var data={ "svg":svgtext,
+				    "name":s3name};
+                         context.succeed(data);
+                     })
     })
+    
 };
 ```
 
