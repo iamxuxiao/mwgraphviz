@@ -130,4 +130,4 @@ The front end is as simple as the following: a text area for user to type in the
 +---------------------------+
 ```
 
-[screenCapOfFrontEnd][mwgraphviz1.png]
+[screenCapOfFrontEnd][https://github.com/iamxuxiao/mwgraphviz/blob/master/mwgraphviz2.png]
