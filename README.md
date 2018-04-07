@@ -1,5 +1,5 @@
-# mwgraphviz
-Draw graphics in browser using AWS Lambda, return the results as SVG and store the images on AWS S3
+# mwgraphviz(Lambda)
+A AWS Lambda function that draw graphics, return the results as SVG and store the images on AWS S3
 
 ## Overall design of the stacks
 In this note, my goal is to have a web service perform dot graph rendering on the cloud. The overall design is not entirely serverless because I still have a front end and a thin server dealing with UI and post, but the the real service which is run graphviz within Lambda is indeed ¡°serverless¡±. Here is the workflow: User types in the textbox some dot text and hit a button to do post, to API-gateway, which is merely a pass-through, then dot text is passed to AWS lambda, the lambda package also contains the executables of graphviz, at there, lambda makes a system call, get the results, in terms of SVG text and return back as a response, for browser to display.
@@ -45,7 +45,7 @@ An api-gateway is necessary for external service to call the lambda( Lambda can 
 ## AWS Lambda that calls to graphviz
 The zip file we will upload to AWS lambda contains the dot_static as well as the index.js. The dot command accepts a file as input and write the result to another file. Because essentially lambda runs within a container, the program does have the write permission to a temp directory. which is /tmp. So we first write the incoming dot text to a disk and then call graphviz on it to generate a SVG file on the disk, and then read its contents and pass it back as response.
 
-```
+```javascript
 var fs    = require('fs') ;
 var spawn = require('child_process').spawn
 var AWS   = require('aws-sdk')
@@ -114,12 +114,13 @@ Some caveats, due to cold start time of lambda and in this example , the disk ti
 
 ## Frontend design
 The front end is as simple as the following: a text area for user to type in the dot text, the button¡¯s callback will make a post to the api-gateway. If you do not want your api-gateway¡¯s address to be seen by the user, the button will post the text to a thin server which on the server side, contains the code to call api-gateway. After the response is received, fill the svg onto the canvas
+
 ```
 +-text area-----------------+
 |                           |                                        
 +---------------------------+
 
-+---------+                 
++---------+               
 | button  |                 
 +---------+                 
 
@@ -128,3 +129,5 @@ The front end is as simple as the following: a text area for user to type in the
 |                           |
 +---------------------------+
 ```
+
+[screenCapOfFrontEnd][mwgraphviz1.png]
