@@ -1,5 +1,5 @@
 # mwgraphviz(Lambda)
-A AWS Lambda function that draw graphics, return the results as SVG and store the images on AWS S3
+A AWS Lambda function that draw graphics, return the results as SVG and store the images on AWS S3. 
 
 ## Overall design of the stacks
 In this note, my goal is to have a web service perform dot graph rendering on the cloud. The overall design is not entirely server-less because I still have a front end and a thin server dealing with UI and post, but the the real service which is run graphviz within Lambda is indeed ¡°server-less¡±. Here is the work-flow: User types in the textbox some dot text and hit a button to do post, to API-gateway, which is merely a pass-through, then dot text is passed to AWS lambda, the lambda package also contains the executable of graphviz, at there, lambda makes a system call, get the results, in terms of SVG text and return back as a response, for browser to display.
