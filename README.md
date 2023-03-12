@@ -1,8 +1,8 @@
 # mwgraphviz(Lambda)
-A AWS Lambda function that draw graphics, return the results as SVG and store the images on AWS S3
+This is a AWS Lambda function that draw graphics, return the results as SVG and store the images on AWS S3
 
 ## Overall design of the stacks
-In this note, my goal is to have a web service perform dot graph rendering on the cloud. The overall design is not entirely server-less because I still have a front end and a thin server dealing with UI and post, but the the real service which is run graphviz within Lambda is indeed ¡°server-less¡±. Here is the work-flow: User types in the textbox some dot text and hit a button to do post, to API-gateway, which is merely a pass-through, then dot text is passed to AWS lambda, the lambda package also contains the executable of graphviz, at there, lambda makes a system call, get the results, in terms of SVG text and return back as a response, for browser to display.
+In this note, my goal is to have a web service perform dot graph rendering on the cloud. The overall design is not entirely server-less because I still have a front end and a thin server dealing with UI and post, but the the real service which is run graphviz within Lambda is indeed Â¡Â°server-lessÂ¡Â±. Here is the work-flow: User types in the textbox some dot text and hit a button to do post, to API-gateway, which is merely a pass-through, then dot text is passed to AWS lambda, the lambda package also contains the executable of graphviz, at there, lambda makes a system call, get the results, in terms of SVG text and return back as a response, for browser to display.
 
 ![screenCapOfFrontEnd](https://github.com/iamxuxiao/mwgraphviz/blob/master/workflow.png)
 
@@ -102,7 +102,7 @@ exports.handler = (event, context, callback) => {
 Some caveats, due to cold start time of lambda and in this example , the disk time and actually called an externa program within a lambda. Sometime the code takes more than default time(3000ms) to finish, so on the safe side, I set the time limit to be 5000ms.
 
 ## Frontend design
-The front end is as simple as the following: a text area for user to type in the dot text, the button¡¯s callback will make a post to the api-gateway. If you do not want your api-gateway¡¯s address to be seen by the user, the button will post the text to a thin server which on the server side, contains the code to call api-gateway. After the response is received, fill the svg onto the canvas
+The front end is as simple as the following: a text area for user to type in the dot text, the buttonÂ¡Â¯s callback will make a post to the api-gateway. If you do not want your api-gatewayÂ¡Â¯s address to be seen by the user, the button will post the text to a thin server which on the server side, contains the code to call api-gateway. After the response is received, fill the svg onto the canvas
 
 ```
 +-text area-----------------+
